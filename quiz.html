@@ -175,17 +175,7 @@
     <div class="overline">Parabole · Client review</div>
     <h1>Compensation tool — decisions to confirm</h1>
     <p class="lede">A few open points from our latest discussion need your call. Tap an answer for each — it only takes a couple of minutes. You can add a note to any question if you'd like to expand.</p>
-    <div class="card">
-      <div class="field">
-        <label for="name">Your name</label>
-        <input type="text" id="name" placeholder="e.g. Carolina Rossi" autocomplete="name">
-      </div>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 4px">Your name is saved with your answers so we can tell responses apart if more than one person reviews.</p>
-      <div class="nav" style="margin-top:18px">
-        <span></span>
-        <button class="btn" id="startBtn" disabled>Start review →</button>
-      </div>
-    </div>
+    <button class="btn" id="startBtn" style="margin-top:4px">Start review →</button>
     <div class="footer">
       <span>Parabole — Compensation (Shared)</span>
       <span id="qcount-foot"></span>
@@ -454,11 +444,6 @@ function show(name){ Object.values(screens).forEach(s=>s.classList.add("hide"));
 
 // intro
 $("#qcount-foot").textContent = QUESTIONS.length + " questions";
-$("#name").addEventListener("input", e=>{
-  state.name = e.target.value.trim();
-  $("#startBtn").disabled = state.name.length === 0;
-});
-$("#name").addEventListener("keydown", e=>{ if(e.key==="Enter" && state.name) startReview(); });
 $("#startBtn").addEventListener("click", startReview);
 function startReview(){ idx=0; show("q"); renderQ(); }
 
@@ -596,4 +581,10 @@ function stripTags(s){ return String(s).replace(/<[^>]*>/g,""); }
 function downloadJSON(obj){
   const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
   const u=URL.createObjectURL(blob); const a=document.createElement("a");
-  a.href=u; a.download=`responses-
+  a.href=u; a.download=`responses-${obj.submissionId}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+</script>
+</body>
+</html>
