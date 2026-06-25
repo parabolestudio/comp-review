@@ -539,8 +539,8 @@ async function submit(){
   const submittedAt = new Date().toISOString();
 
   // Build a stable flat row + headers (one column per question, plus a note column)
-  const headers = ["Timestamp","Submission ID","Name"];
-  const row = [submittedAt, submissionId, state.name];
+  const headers = ["Timestamp","Submission ID"];
+  const row = [submittedAt, submissionId];
   QUESTIONS.forEach((q,i)=>{
     const a = state.answers[q.id] || {};
     headers.push(`Q${i+1}. ${stripTags(q.title)}`);
