@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compensation tool — review &amp; decisions</title>
+<style>
+  /* ============================================================
+     PARABOLE-STYLE REVIEW QUIZ
+     Visual approximation of status.parabole.studio
+     ============================================================ */
+  :root{
+    --bg:#f6f5f2;
+    --card:#ffffff;
+    --ink:#1a1a1a;
+    --muted:#6b6862;
+    --line:#e4e1da;
+    --line-strong:#d4d0c7;
+    --accent:#1a1a1a;
+    --accent-soft:#eceae4;
+    --pill-prog:#eef3ec;
+    --pill-prog-ink:#3f6b3a;
+    --pill-next:#f2efe8;
+    --pill-next-ink:#7a6f57;
+    --sel:#1a1a1a;
+    --sel-bg:#1a1a1a;
+    --radius:14px;
+    --maxw:680px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:48px 24px 96px}
+
+  .overline{
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  h1{
+    font-size:34px;
+    line-height:1.15;
+    font-weight:600;
+    letter-spacing:-.01em;
+    margin:0 0 14px;
+  }
+  .lede{color:var(--muted);font-size:16px;margin:0 0 28px;max-width:56ch}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;font-weight:600;letter-spacing:.02em;
+    padding:4px 11px;border-radius:999px;
+    background:var(--pill-next);color:var(--pill-next-ink);
+  }
+  .pill.green{background:var(--pill-prog);color:var(--pill-prog-ink)}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  /* progress */
+  .progress-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .progress-head .count{font-size:13px;color:var(--muted);font-weight:500}
+  .bar{height:4px;background:var(--line);border-radius:999px;overflow:hidden;margin-bottom:34px}
+  .bar > i{display:block;height:100%;background:var(--accent);width:0;transition:width .35s ease}
+
+  /* card */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:30px 30px 26px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03);
+  }
+  .qmeta{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .qtitle{font-size:21px;font-weight:600;line-height:1.3;margin:0 0 8px;letter-spacing:-.01em}
+  .qcontext{color:var(--muted);font-size:15px;margin:0 0 22px}
+  .qcontext strong{color:var(--ink);font-weight:600}
+
+  .options{display:flex;flex-direction:column;gap:10px}
+  .opt{
+    display:flex;align-items:flex-start;gap:13px;
+    border:1px solid var(--line-strong);
+    border-radius:11px;
+    padding:14px 16px;
+    cursor:pointer;
+    background:#fff;
+    transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    text-align:left;width:100%;font:inherit;color:inherit;
+  }
+  .opt:hover{border-color:#b9b4a8;background:#fcfbf9}
+  .opt .mark{
+    flex:0 0 auto;width:20px;height:20px;border-radius:50%;
+    border:1.5px solid var(--line-strong);margin-top:1px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s ease;
+  }
+  .opt .mark svg{width:11px;height:11px;opacity:0;transform:scale(.5);transition:all .15s ease}
+  .opt.selected{border-color:var(--sel);background:#fbfaf8;box-shadow:0 0 0 1px var(--sel) inset}
+  .opt.selected .mark{background:var(--sel-bg);border-color:var(--sel-bg)}
+  .opt.selected .mark svg{opacity:1;transform:scale(1);color:#fff}
+  .opt .body{flex:1}
+  .opt .label{font-size:15px;font-weight:550;line-height:1.35}
+  .opt .sub{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .rec{
+    display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--pill-prog-ink);background:var(--pill-prog);
+    padding:2px 7px;border-radius:999px;margin-left:8px;vertical-align:middle;
+  }
+
+  /* note field */
+  .note-toggle{
+    margin-top:16px;font-size:13px;color:var(--muted);
+    background:none;border:none;cursor:pointer;padding:4px 0;font:inherit;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .note-toggle:hover{color:var(--ink)}
+  .note-wrap{margin-top:10px;display:none}
+  .note-wrap.open{display:block}
+  textarea,input[type=text]{
+    width:100%;font:inherit;color:var(--ink);
+    border:1px solid var(--line-strong);border-radius:10px;
+    padding:11px 13px;background:#fff;resize:vertical;
+  }
+  textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent)}
+  textarea{min-height:74px}
+
+  /* nav */
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:26px;gap:12px}
+  .btn{
+    font:inherit;font-weight:600;font-size:15px;
+    padding:12px 24px;border-radius:11px;border:1px solid var(--accent);
+    background:var(--accent);color:#fff;cursor:pointer;
+    transition:opacity .15s ease, background .15s ease;
+  }
+  .btn:hover{opacity:.88}
+  .btn[disabled]{opacity:.35;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+  .btn.ghost:hover{background:var(--accent-soft);opacity:1}
+
+  /* intro / outro */
+  .field{margin:8px 0 24px}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px}
+  .footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .footer a{color:var(--muted)}
+  .center{text-align:center}
+  .big-check{width:54px;height:54px;border-radius:50%;background:var(--pill-prog);color:var(--pill-prog-ink);display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+  .hide{display:none!important}
+
+  /* review */
+  .review-item{padding:14px 0;border-bottom:1px solid var(--line)}
+  .review-item .q{font-size:13px;color:var(--muted);margin-bottom:3px}
+  .review-item .a{font-size:15px;font-weight:550}
+  .review-item .n{font-size:13px;color:var(--muted);margin-top:3px;font-style:italic}
+  .review-edit{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none;float:right;font:inherit}
+  .review-edit:hover{color:var(--ink)}
+
+  @media (max-width:520px){
+    h1{font-size:27px}.wrap{padding:34px 18px 80px}.card{padding:24px 20px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section id="screen-intro">
+    <div class="overline">Parabole · Client review</div>
+    <h1>Compensation tool — decisions to confirm</h1>
+    <p class="lede">A few open points from our latest discussion need your call. Tap an answer for each — it only takes a couple of minutes. You can add a note to any question if you'd like to expand.</p>
+    <div class="card">
+      <div class="field">
+        <label for="name">Your name</label>
+        <input type="text" id="name" placeholder="e.g. Carolina Rossi" autocomplete="name">
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 4px">Your name is saved with your answers so we can tell responses apart if more than one person reviews.</p>
+      <div class="nav" style="margin-top:18px">
+        <span></span>
+        <button class="btn" id="startBtn" disabled>Start review →</button>
+      </div>
+    </div>
+    <div class="footer">
+      <span>Parabole — Compensation (Shared)</span>
+      <span id="qcount-foot"></span>
+    </div>
+  </section>
+
+  <!-- ============ QUESTION ============ -->
+  <section id="screen-q" class="hide">
+    <div class="progress-head">
+      <div class="overline" style="margin-bottom:0">Parabole · Client review</div>
+      <span class="count" id="counter"></span>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="card" id="qcard"><!-- injected --></div>
+    <div class="nav">
+      <button class="btn ghost" id="backBtn">← Back</button>
+      <button class="btn" id="nextBtn" disabled>Next →</button>
+    </div>
+  </section>
+
+  <!-- ============ REVIEW ============ -->
+  <section id="screen-review" class="hide">
+    <div class="overline">Parabole · Client review</div>
+    <h1>Review your answers</h1>
+    <p class="lede">Check everything looks right, then submit. You can tap any item to change it.</p>
+    <div class="card" id="reviewList"></div>
+    <div class="nav">
+      <button class="btn ghost" id="reviewBack">← Back</button>
+      <button class="btn" id="submitBtn">Submit answers ✓</button>
+    </div>
+  </section>
+
+  <!-- ============ DONE ============ -->
+  <section id="screen-done" class="hide">
+    <div class="card center">
+      <div class="big-check">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h1 style="font-size:24px">Thank you</h1>
+      <p class="lede center" style="margin:0 auto" id="doneMsg">Your answers have been recorded. Parabole will pick things up from here.</p>
+      <div id="doneFallback" class="hide" style="margin-top:18px">
+        <p style="font-size:13px;color:var(--muted)">If you'd like a copy of your responses, you can download them:</p>
+        <button class="btn ghost" id="downloadBtn">Download my answers (.json)</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   1) CONFIG  —  paste your Google Sheet web-app URL here
+   ============================================================ */
+const CONFIG = {
+  // After you deploy the Apps Script (see SETUP-google-sheet.md),
+  // paste the web-app URL between the quotes below:
+  SHEET_ENDPOINT: "https://script.google.com/macros/s/AKfycbxG0e4JTPz3-wzJt1M1rMQ7hqzc2wXY7oQufpBP_erKCJsuH88aE3_CC9x02rRjQUWIlw/exec",   // e.g. "https://script.google.com/macros/s/AKfy.../exec"
+  PROJECT: "Compensation (Shared) — client review"
+};
+
+/* ============================================================
+   2) QUESTIONS  —  edit text / options freely here
+      type: "choice"  -> must pick one option
+      Each option can have: label, sub (small grey text), rec (true = "Suggested")
+      allowNote: true  -> shows an optional "Add a note" box
+   ============================================================ */
+const QUESTIONS = [
+  {
+    id:"q1_mandatory_filters",
+    section:"1 · Default view & dropdowns",
+    title:"Keep Team and Role as mandatory filters?",
+    context:"Empty filters are doable, but without <strong>Team</strong> and <strong>Role</strong> the Role box has nothing to populate. If kept mandatory, the page opens with a prompt to select Team and Role to start viewing data.",
+    type:"choice",
+    options:[
+      {label:"Yes — keep Team & Role mandatory", sub:"Page opens with a 'select Team & Role to start' prompt.", rec:true},
+      {label:"No — make all filters optional", sub:"We'll need to agree how the empty Role box behaves."}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q2_aggregate_method",
+    section:"1 · Default view & dropdowns",
+    title:"When not all filters are selected, how should the table & charts aggregate?",
+    context:"With partial filters, the table and charts show an aggregate of the matching rows. We want a method that's mathematically correct for your data.",
+    type:"choice",
+    options:[
+      {label:"Mean (simple average) of matching rows", rec:true},
+      {label:"Median of matching rows"},
+      {label:"Weighted average", sub:"e.g. weighted by headcount — most accurate if rows differ in size."},
+      {label:"Add dedicated aggregate rows in the data", sub:"We compute the figure in the sheet instead of in code."},
+      {label:"Let's discuss — I'm not sure yet"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q3_share_of_women",
+    section:"1 · Default view & dropdowns",
+    title:"Share of women when Region is not selected?",
+    context:"Share of women also depends on <strong>Region</strong>. When no region is chosen, we'd show an aggregate across regions.",
+    type:"choice",
+    options:[
+      {label:"Show an average across regions", rec:true},
+      {label:"Weighted average across regions", sub:"Weighted by headcount per region."},
+      {label:"Other — see my note"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q4_all_label",
+    section:"1 · Default view & dropdowns",
+    title:"Label blank filters as “All” instead of “Select”?",
+    context:"Using <strong>“All”</strong> for an unselected filter hints that what's shown is an aggregate, rather than nothing chosen yet.",
+    type:"choice",
+    options:[
+      {label:"Yes — use “All”", rec:true},
+      {label:"No — keep “Select”"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q5_disclaimer",
+    section:"1 · Default view & dropdowns",
+    title:"Add a disclaimer while viewing aggregates?",
+    context:"A short note could highlight that until all filters are selected, the table and charts show an average / aggregate.",
+    type:"choice",
+    options:[
+      {label:"Yes — add a disclaimer"},
+      {label:"No — not needed"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q6_loading_state",
+    section:"2 · Loading / recalculation state",
+    title:"Loading / recalculation state — how should we proceed?",
+    context:"This is feasible. The wait is somewhat artificial (data would otherwise load instantly). We don't have access to the Preqin portal, so we'd design our own loading state and show you once implemented.",
+    type:"choice",
+    options:[
+      {label:"Sounds good — design it and show me", rec:true},
+      {label:"I'd like to align on the approach first"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q7_comparator_set",
+    section:"3 · Coverage cards & comparator set",
+    title:"What should “Your comparator set” show when not all filters are selected?",
+    context:"The comparator-set numbers draw from the main tabs. With partial filters, they need an aggregation rule.",
+    type:"choice",
+    options:[
+      {label:"Sum"},
+      {label:"Average"},
+      {label:"Something else — see my note"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q8_navigation",
+    section:"4 · Navigation & menu structure",
+    title:"Confirm the navigation plan?",
+    context:"Tabs are renamed/reordered per your input. The <strong>Compensation</strong> tab keeps the AirDev calculator (currently live) until launch. Once the new page is ready, <strong>Compensation</strong> leads to the landing page, and the calculator moves there.",
+    type:"choice",
+    options:[
+      {label:"Got it — proceed as planned", rec:true},
+      {label:"I have a question about this"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q9_last_update",
+    section:"5 · “Last update” field",
+    title:"Confirm the “Last update” field approach?",
+    context:"It can be updated manually from the static-data sheet, as long as the column names stay the same.",
+    type:"choice",
+    options:[
+      {label:"Understood — that works for us", rec:true},
+      {label:"I have a comment"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q10_footnote_region",
+    section:"6 · Gender breakdown footnote",
+    title:"Add a footnote line about region aggregation?",
+    context:"Rounding & methodology footnote is done. If the aggregate approach (point 1) is approved, we can add a line noting that when Region isn't selected, this value is an aggregate.",
+    type:"choice",
+    options:[
+      {label:"Yes — add the footnote line", rec:true},
+      {label:"No — not needed"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q11_currencies",
+    section:"7 · New regions & currency handling",
+    title:"Currency handling approach?",
+    context:"We'd predefine a list of currencies likely to appear in future, so the code already knows how to read them. This minimises dev work — only rare/unexpected currencies would need a dev touch.",
+    type:"choice",
+    options:[
+      {label:"Yes — predefine a currency list", sub:"I'll share which currencies to expect (you can note them here).", rec:true},
+      {label:"Other approach — see my note"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q12_regions",
+    section:"7 · New regions & currency handling",
+    title:"How should regions be stored & displayed?",
+    context:"Two routes for region naming:",
+    type:"choice",
+    options:[
+      {label:"Option A — keep acronyms in data, code transforms them", sub:"Current approach. Needs a list of countries likely to appear in future updates."},
+      {label:"Option B — store regions already in display form", sub:"e.g. “Europe” not “EUR”. Future data must follow the same notation; no code transform."}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q13_clear_all_loader",
+    section:"8 · Clear-all button",
+    title:"Add the small loader to the Clear-all button too?",
+    context:"Doable — we can place the little loader next to the Clear-all button as well.",
+    type:"choice",
+    options:[
+      {label:"Yes — add the loader", rec:true},
+      {label:"No — leave it off"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q14_role_naming",
+    section:"9 · Role filter order & labelling",
+    title:"Shorten role names for the closed dropdown preview?",
+    context:"Shorter role names let the closed dropdown preview the role, instead of long strings like “Investment / Deal team …”. Taxonomy would be cleaned directly in the datasheet.",
+    type:"choice",
+    options:[
+      {label:"Yes — shorten the role names", rec:true},
+      {label:"No — keep the full names"}
+    ],
+    allowNote:true
+  },
+  {
+    id:"q15_seniority_order",
+    section:"9 · Role filter order & labelling",
+    title:"Seniority order — please share the list",
+    context:"We can sort roles by the <strong>Seniority</strong> column at all times. To do that, we need the full list of seniorities in ascending order. Pick how you'd like to send it (and you can type the list in the note).",
+    type:"choice",
+    options:[
+      {label:"I'll list the seniorities in the note below"},
+      {label:"I'll send the list separately"}
+    ],
+    allowNote:true
+  }
+];
+
+/* ============================================================
+   3) APP LOGIC  (no need to edit below)
+   ============================================================ */
+const state = { name:"", answers:{} }; // answers[id] = {answer, note}
+let idx = 0;
+
+const $ = s => document.querySelector(s);
+const screens = {
+  intro:$("#screen-intro"), q:$("#screen-q"), review:$("#screen-review"), done:$("#screen-done")
+};
+function show(name){ Object.values(screens).forEach(s=>s.classList.add("hide")); screens[name].classList.remove("hide"); window.scrollTo({top:0,behavior:"instant"}); }
+
+// intro
+$("#qcount-foot").textContent = QUESTIONS.length + " questions";
+$("#name").addEventListener("input", e=>{
+  state.name = e.target.value.trim();
+  $("#startBtn").disabled = state.name.length === 0;
+});
+$("#name").addEventListener("keydown", e=>{ if(e.key==="Enter" && state.name) startReview(); });
+$("#startBtn").addEventListener("click", startReview);
+function startReview(){ idx=0; show("q"); renderQ(); }
+
+// question rendering
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+function renderQ(){
+  const q = QUESTIONS[idx];
+  const saved = state.answers[q.id] || {};
+  $("#counter").textContent = `Question ${idx+1} of ${QUESTIONS.length}`;
+  $("#barFill").style.width = ((idx)/QUESTIONS.length*100) + "%";
+
+  let html = `<div class="qmeta">${q.section}</div>
+    <h2 class="qtitle">${q.title}</h2>
+    <p class="qcontext">${q.context}</p>
+    <div class="options">`;
+  q.options.forEach((o,i)=>{
+    const sel = saved.answer === o.label ? " selected" : "";
+    html += `<button class="opt${sel}" data-i="${i}">
+      <span class="mark">${CHECK}</span>
+      <span class="body">
+        <span class="label">${o.label}${o.rec?'<span class="rec">Suggested</span>':''}</span>
+        ${o.sub?`<span class="sub">${o.sub}</span>`:''}
+      </span></button>`;
+  });
+  html += `</div>`;
+  if(q.allowNote){
+    const open = saved.note ? " open" : "";
+    html += `<button class="note-toggle" id="noteToggle">＋ Add a note ${saved.note?'(1)':''}</button>
+      <div class="note-wrap${open}" id="noteWrap">
+        <textarea id="noteField" placeholder="Optional — add detail, a list, or context…">${saved.note?escapeHtml(saved.note):''}</textarea>
+      </div>`;
+  }
+  $("#qcard").innerHTML = html;
+
+  // option clicks
+  $("#qcard").querySelectorAll(".opt").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const o = q.options[+btn.dataset.i];
+      const prev = state.answers[q.id] || {};
+      state.answers[q.id] = { answer:o.label, note:prev.note||"" };
+      $("#qcard").querySelectorAll(".opt").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      $("#nextBtn").disabled = false;
+    });
+  });
+  // note
+  if(q.allowNote){
+    $("#noteToggle").addEventListener("click", ()=> $("#noteWrap").classList.toggle("open"));
+    $("#noteField").addEventListener("input", e=>{
+      const prev = state.answers[q.id] || {answer:""};
+      state.answers[q.id] = { answer:prev.answer||"", note:e.target.value };
+    });
+  }
+  $("#nextBtn").disabled = !(saved.answer);
+  $("#backBtn").textContent = idx===0 ? "← Intro" : "← Back";
+  $("#nextBtn").textContent = idx===QUESTIONS.length-1 ? "Review →" : "Next →";
+}
+
+$("#nextBtn").addEventListener("click", ()=>{
+  if(idx === QUESTIONS.length-1){ renderReview(); show("review"); }
+  else { idx++; renderQ(); }
+});
+$("#backBtn").addEventListener("click", ()=>{
+  if(idx===0){ show("intro"); } else { idx--; renderQ(); }
+});
+
+// review
+function renderReview(){
+  let html="";
+  QUESTIONS.forEach((q,i)=>{
+    const a = state.answers[q.id] || {};
+    html += `<div class="review-item">
+      <button class="review-edit" data-i="${i}">Edit</button>
+      <div class="q">${i+1}. ${stripTags(q.title)}</div>
+      <div class="a">${a.answer ? escapeHtml(a.answer) : '<span style="color:#b00">— not answered —</span>'}</div>
+      ${a.note?`<div class="n">“${escapeHtml(a.note)}”</div>`:''}
+    </div>`;
+  });
+  $("#reviewList").innerHTML = html;
+  $("#reviewList").querySelectorAll(".review-edit").forEach(b=>{
+    b.addEventListener("click", ()=>{ idx=+b.dataset.i; show("q"); renderQ(); });
+  });
+}
+$("#reviewBack").addEventListener("click", ()=>{ idx=QUESTIONS.length-1; show("q"); renderQ(); });
+
+// submit
+$("#submitBtn").addEventListener("click", submit);
+async function submit(){
+  const btn=$("#submitBtn"); btn.disabled=true; btn.textContent="Submitting…";
+
+  const submissionId = makeId();
+  const submittedAt = new Date().toISOString();
+
+  // Build a stable flat row + headers (one column per question, plus a note column)
+  const headers = ["Timestamp","Submission ID","Name"];
+  const row = [submittedAt, submissionId, state.name];
+  QUESTIONS.forEach((q,i)=>{
+    const a = state.answers[q.id] || {};
+    headers.push(`Q${i+1}. ${stripTags(q.title)}`);
+    row.push(a.answer || "");
+    headers.push(`Q${i+1} note`);
+    row.push(a.note || "");
+  });
+  const payload = { project:CONFIG.PROJECT, submissionId, name:state.name, submittedAt, headers, row,
+                    answers: QUESTIONS.map((q,i)=>({ id:q.id, question:stripTags(q.title), answer:(state.answers[q.id]||{}).answer||"", note:(state.answers[q.id]||{}).note||"" })) };
+  window.__lastPayload = payload;
+
+  let ok=false;
+  if(CONFIG.SHEET_ENDPOINT){
+    try{
+      await fetch(CONFIG.SHEET_ENDPOINT, {
+        method:"POST", mode:"no-cors",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(payload)
+      });
+      ok=true; // no-cors gives an opaque response; assume success
+    }catch(e){ ok=false; }
+  }
+
+  show("done");
+  if(ok){
+    $("#doneMsg").textContent = "Your answers have been recorded. Parabole will pick things up from here.";
+  }else{
+    $("#doneMsg").textContent = "Your answers are ready, but the storage link isn't configured yet. Please download them and send to Parabole.";
+    $("#doneFallback").classList.remove("hide");
+  }
+  $("#downloadBtn").onclick = ()=> downloadJSON(payload);
+}
+
+/* helpers */
+function makeId(){ return "r-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function stripTags(s){ return String(s).replace(/<[^>]*>/g,""); }
+function downloadJSON(obj){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const u=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=u; a.download=`responses-
